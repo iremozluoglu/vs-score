@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Volleyball Match Prediction</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', Arial, sans-serif;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f7faff 100%);
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: #fff;
+            max-width: 420px;
+            margin: 60px auto 0 auto;
+            padding: 36px 30px 28px 30px;
+            border-radius: 22px;
+            box-shadow: 0 8px 32px rgba(44, 62, 80, 0.13);
+            position: relative;
+        }
+        h2 {
+            text-align: center;
+            color: #1a237e;
+            margin-bottom: 28px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        label {
+            display: block;
+            margin: 18px 0 7px 0;
+            color: #283593;
+            font-weight: 500;
+            font-size: 1.04em;
+        }
+        select, button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 14px;
+            border-radius: 8px;
+            border: 1px solid #c5cae9;
+            font-size: 1.08em;
+            background: #f4f6fb;
+            transition: border 0.2s;
+        }
+        select:focus {
+            border: 1.5px solid #3949ab;
+            outline: none;
+        }
+        button {
+            background: linear-gradient(90deg, #3949ab 60%, #1976d2 100%);
+            color: #fff;
+            border: none;
+            font-weight: 600;
+            font-size: 1.08em;
+            cursor: pointer;
+            margin-top: 8px;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
+            transition: background 0.2s, transform 0.1s;
+        }
+        button:hover {
+            background: linear-gradient(90deg, #1976d2 60%, #3949ab 100%);
+            transform: translateY(-2px) scale(1.03);
+        }
+        .result {
+            margin-top: 28px;
+            padding: 22px 16px 18px 16px;
+            background: #f0f7ff;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 1.13em;
+            color: #263238;
+            min-height: 54px;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.06);
+            position: relative;
+        }
+        .result b { font-size: 1.09em; }
+        .result .prob1 { color: #1976d2; font-weight: bold; }
+        .result .prob2 { color: #e67e22; font-weight: bold; }
+        .result .winner {
+            display: inline-block;
+            margin-top: 16px;
+            font-size: 1.18em;
+            color: #27ae60;
+            font-weight: bold;
+            background: #e8f5e9;
+            border-radius: 18px;
+            padding: 8px 22px;
+            box-shadow: 0 2px 8px rgba(39, 174, 96, 0.08);
+            animation: pop 0.5s cubic-bezier(.68,-0.55,.27,1.55);
+        }
+        @keyframes pop {
+            0% { transform: scale(0.7); opacity: 0.2; }
+            80% { transform: scale(1.08); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        .footer {
+            text-align: center;
+            margin-top: 44px;
+            color: #b0b6c3;
+            font-size: 1em;
+            letter-spacing: 0.2px;
+        }
+        @media (max-width: 600px) {
+            .container {
+                max-width: 98vw;
+                margin: 18px 1vw 0 1vw;
+                padding: 18px 6vw 18px 6vw;
+            }
+            h2 { font-size: 1.25em; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Volleyball Match Prediction</h2>
+    <form id="predictForm">
+        <label for="team1">Select the first team:</label>
+        <select name="team1" id="team1"></select>
+        <label for="team2">Select the opponent team:</label>
+        <select name="team2" id="team2"></select>
+        <button type="submit">Predict</button>
+    </form>
+    <div class="result" id="result"></div>
+</div>
+<div class="footer">&copy; 2024 Volleyball Score Prediction</div>
+<script>
+// Fetch the team list from the API
+async function loadTeams() {
+    const resp = await fetch("/teams");
+    const data = await resp.json();
+    const team1Select = document.getElementById('team1');
+    const team2Select = document.getElementById('team2');
+    team1Select.innerHTML = "";
+    team2Select.innerHTML = "";
+    data.teams.forEach(team => {
+        let opt1 = document.createElement("option");
+        opt1.value = team;
+        opt1.text = team;
+        team1Select.appendChild(opt1);
+
+        let opt2 = document.createElement("option");
+        opt2.value = team;
+        opt2.text = team;
+        team2Select.appendChild(opt2);
+    });
+    // By default, select different teams
+    if (data.teams.length > 1) {
+        team2Select.selectedIndex = 1;
+    }
+    updateOptions();
+}
+// Prevent selecting the same team in both dropdowns
+function updateOptions() {
+    const team1 = team1Select.value;
+    const team2 = team2Select.value;
+    for (let opt of team2Select.options) {
+        opt.disabled = (opt.value === team1);
+    }
+    for (let opt of team1Select.options) {
+        opt.disabled = (opt.value === team2);
+    }
+}
+const team1Select = document.getElementById('team1');
+const team2Select = document.getElementById('team2');
+team1Select.addEventListener('change', updateOptions);
+team2Select.addEventListener('change', updateOptions);
+// Handle prediction form submission
+const form = document.getElementById('predictForm');
+form.onsubmit = async function(e) {
+    e.preventDefault();
+    document.getElementById('result').innerHTML = 'Predicting...';
+    const team1 = team1Select.value;
+    const team2 = team2Select.value;
+    const resp = await fetch("/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ team1, team2 })
+    });
+    const data = await resp.json();
+    if (data.detail) {
+        document.getElementById("result").innerText = data.detail;
+    } else {
+        let winner = null;
+        if (data.win_probability_team1 > data.win_probability_team2) {
+            winner = `<span class='winner'><b>${data.team1}</b> is more likely to win</span>`;
+        } else if (data.win_probability_team2 > data.win_probability_team1) {
+            winner = `<span class='winner'><b>${data.team2}</b> is more likely to win</span>`;
+        } else {
+            winner = `<span class='winner'>Draw is highly likely</span>`;
+        }
+        document.getElementById("result").innerHTML =
+            `<b>${data.team1}</b> win probability: <span class='prob1'>%${data.win_probability_team1.toFixed(2)}</span><br>` +
+            `<b>${data.team2}</b> win probability: <span class='prob2'>%${data.win_probability_team2.toFixed(2)}</span>` +
+            winner;
+    }
+};
+loadTeams();
+</script>
+</body>
+</html>
